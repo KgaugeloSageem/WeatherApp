@@ -1,6 +1,8 @@
 plugins {
     alias(libs.plugins.androidApplication)
     alias(libs.plugins.jetbrainsKotlinAndroid)
+    id("kotlin-kapt")
+    alias(libs.plugins.hilt)
 }
 
 android {
@@ -66,4 +68,19 @@ dependencies {
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
+
+    // Android Maps Compose composables for the Maps SDK for Android
+    implementation(libs.maps.compose)
+
+    //Volley
+    implementation(libs.volley)
+    implementation(libs.gson)
+
+    //Hilt
+    implementation(libs.hilt.android)
+    kapt(libs.hilt.android.compiler)
+}
+
+kapt {
+    correctErrorTypes = true
 }
