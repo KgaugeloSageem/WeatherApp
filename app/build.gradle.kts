@@ -71,6 +71,10 @@ dependencies {
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
 
+
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.7.0")
+
+
     // Android Maps Compose composables for the Maps SDK for Android
     implementation(libs.maps.compose)
 

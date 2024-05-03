@@ -1,4 +1,4 @@
-package com.sure.weatherapp.service.models
+package com.sure.weatherapp.servicelayer.models
 
 class ServiceResult<T>(
     var serviceResponse: ServiceResponse = ServiceResponse(),

@@ -1,11 +1,11 @@
-package com.sure.weatherapp.service.module;
+package com.sure.weatherapp.servicelayer.module;
 
 import android.content.Context;
 
 import com.android.volley.RequestQueue;
 import com.android.volley.toolbox.Volley;
-import com.sure.weatherapp.service.Service;
-import com.sure.weatherapp.service.ServiceImpl;
+import com.sure.weatherapp.servicelayer.Service;
+import com.sure.weatherapp.servicelayer.ServiceImpl;
 
 import javax.inject.Singleton;
 

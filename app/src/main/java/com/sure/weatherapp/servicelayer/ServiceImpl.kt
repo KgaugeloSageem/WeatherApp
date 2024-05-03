@@ -1,9 +1,9 @@
-package com.sure.weatherapp.service
+package com.sure.weatherapp.servicelayer
 
-import com.sure.weatherapp.service.models.ExceptionResponse
-import com.sure.weatherapp.service.models.ResponseType
-import com.sure.weatherapp.service.models.ServiceResponse
-import com.sure.weatherapp.service.models.ServiceResult
+import com.sure.weatherapp.servicelayer.models.ExceptionResponse
+import com.sure.weatherapp.servicelayer.models.ResponseType
+import com.sure.weatherapp.servicelayer.models.ServiceResponse
+import com.sure.weatherapp.servicelayer.models.ServiceResult
 import com.android.volley.DefaultRetryPolicy
 import com.android.volley.NetworkResponse
 import com.android.volley.ParseError
@@ -27,42 +27,19 @@ class ServiceImpl @Inject constructor(
     private val requestQueue: RequestQueue
 ) : Service {
 
-    override suspend fun <T : Any> GET(url: String, responseType: Class<T>): ServiceResult<T> =
-        request(url, Method.GET, responseType)
-
-    override suspend fun <T : Any> GET(
-        url: String,
-        request: Any,
-        responseType: Class<T>
-    ): ServiceResult<T> =
-        requestWithBody(url, Method.GET, request, responseType)
+    override suspend fun <T : Any> GET(url: String, parameters: String, responseType: Class<T>): ServiceResult<T> =
+        request(url = url, method = Method.GET, parameters = parameters, responseType = responseType)
 
     private suspend fun <T : Any> request(
         url: String,
         method: Int,
+        parameters: String,
         responseType: Class<T>
     ): ServiceResult<T> = suspendCancellableCoroutine { continuation ->
         val jsonObjectRequest = createJsonObjectRequest(
             url = url,
             method = method,
-            continuation = continuation
-        ) { response ->
-            handleResponse(response, responseType, continuation)
-        }
-
-        sendRequest(jsonObjectRequest, continuation)
-    }
-
-    private suspend fun <T : Any> requestWithBody(
-        url: String,
-        method: Int,
-        request: Any,
-        responseType: Class<T>
-    ): ServiceResult<T> = suspendCancellableCoroutine { continuation ->
-        val jsonObjectRequest = createJsonObjectRequest(
-            url = url,
-            method = method,
-            requestBody = parseDataModelToJson(request),
+            parameters = parameters,
             continuation = continuation
         ) { response ->
             handleResponse(response, responseType, continuation)
@@ -86,11 +63,11 @@ class ServiceImpl @Inject constructor(
     private fun <T : Any> createJsonObjectRequest(
         url: String,
         method: Int,
-        requestBody: JSONObject? = null,
+        parameters: String,
         continuation: CancellableContinuation<ServiceResult<T>>,
         onResponse: (JSONObject?) -> Unit
     ): JsonObjectRequest {
-        return object : JsonObjectRequest(method, BASE_URL.format(url), requestBody,
+        return object : JsonObjectRequest(method, "$BASE_URL/$url?apikey=xnWseAuTPupnnl400wT9vlJZ8AHKEL4C$parameters", null,
             Response.Listener { response -> onResponse(response) },
             Response.ErrorListener { error ->
                 handleError(
@@ -98,7 +75,11 @@ class ServiceImpl @Inject constructor(
                     continuation
                 )
             }) {
-            override fun getHeaders(): Map<String, String> = emptyMap()
+//            override fun getHeaders(): Map<String, String> {
+//                val headers = HashMap<String, String>()
+//                headers["Host"] = "dataservice.accuweather.com"
+//                return headers
+//            }
 
             override fun parseNetworkResponse(response: NetworkResponse?): Response<JSONObject> {
                 try {
@@ -120,6 +101,14 @@ class ServiceImpl @Inject constructor(
                     return Response.error(ParseError(je))
                 }
             }
+
+//            override fun getParams(): MutableMap<String, String> {
+//               val params : HashMap<String, String> = HashMap()
+//                params["apikey"] = "xnWseAuTPupnnl400wT9vlJZ8AHKEL4C"
+//                params.putAll(parameters)
+//
+//                return params
+//            }
         }
     }
 
@@ -131,6 +120,8 @@ class ServiceImpl @Inject constructor(
             error.networkResponse?.data ?: ByteArray(0),
             Charset.forName(HttpHeaderParser.parseCharset(error.networkResponse?.headers, "UTF-8"))
         )
+
+        println("Sage ServiceLayer***: $byteBody")
 
         try {
             val data = parseJsonToDataModel(
@@ -150,6 +141,7 @@ class ServiceImpl @Inject constructor(
                 code = "Connection Error",
                 message = "Something went wrong"
             )
+            println("Sage ServiceLayer: ${e.localizedMessage}")
             val apiResult = ServiceResult<T>(serviceResponse = apiResponse)
             continuation.resume(apiResult)
         }
@@ -177,9 +169,7 @@ class ServiceImpl @Inject constructor(
         }
     }
 
-    private fun parseDataModelToJson(src: Any): JSONObject = JSONObject(Gson().toJson(src))
-
     companion object {
-        private const val BASE_URL = "http://dataservice.accuweather.com/"
+        private const val BASE_URL = "http://dataservice.accuweather.com"
     }
 }
