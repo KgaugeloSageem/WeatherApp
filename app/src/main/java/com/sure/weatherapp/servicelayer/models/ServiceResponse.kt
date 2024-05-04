@@ -1,12 +1,6 @@
 package com.sure.weatherapp.servicelayer.models
 
-interface IServiceResponse{
-    var responseType: ResponseType
-    var code: String?
-}
-
-data class ServiceResponse(override var responseType: ResponseType = ResponseType.NONE, override var code: String? = null, var message: String = ""):
-    IServiceResponse
+data class ServiceResponse(var responseType: ResponseType = ResponseType.NONE, var message: String = "")
 
 enum class ResponseType{
     SUCCESS,

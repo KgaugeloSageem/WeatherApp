@@ -1,9 +1,5 @@
 package com.sure.weatherapp.servicelayer
 
-import com.sure.weatherapp.servicelayer.models.ExceptionResponse
-import com.sure.weatherapp.servicelayer.models.ResponseType
-import com.sure.weatherapp.servicelayer.models.ServiceResponse
-import com.sure.weatherapp.servicelayer.models.ServiceResult
 import com.android.volley.DefaultRetryPolicy
 import com.android.volley.NetworkResponse
 import com.android.volley.ParseError
@@ -14,6 +10,10 @@ import com.android.volley.VolleyError
 import com.android.volley.toolbox.HttpHeaderParser
 import com.android.volley.toolbox.JsonObjectRequest
 import com.google.gson.Gson
+import com.sure.weatherapp.servicelayer.models.ExceptionResponse
+import com.sure.weatherapp.servicelayer.models.ResponseType
+import com.sure.weatherapp.servicelayer.models.ServiceResponse
+import com.sure.weatherapp.servicelayer.models.ServiceResult
 import kotlinx.coroutines.CancellableContinuation
 import kotlinx.coroutines.suspendCancellableCoroutine
 import org.json.JSONException
@@ -75,11 +75,6 @@ class ServiceImpl @Inject constructor(
                     continuation
                 )
             }) {
-//            override fun getHeaders(): Map<String, String> {
-//                val headers = HashMap<String, String>()
-//                headers["Host"] = "dataservice.accuweather.com"
-//                return headers
-//            }
 
             override fun parseNetworkResponse(response: NetworkResponse?): Response<JSONObject> {
                 try {
@@ -101,14 +96,6 @@ class ServiceImpl @Inject constructor(
                     return Response.error(ParseError(je))
                 }
             }
-
-//            override fun getParams(): MutableMap<String, String> {
-//               val params : HashMap<String, String> = HashMap()
-//                params["apikey"] = "xnWseAuTPupnnl400wT9vlJZ8AHKEL4C"
-//                params.putAll(parameters)
-//
-//                return params
-//            }
         }
     }
 
@@ -130,7 +117,6 @@ class ServiceImpl @Inject constructor(
             )
             val response = ServiceResponse(
                 responseType = ResponseType.ERROR,
-                code = data?.status.toString(),
                 message = data?.message.toString()
             )
             val apiResult = ServiceResult<T>(serviceResponse = response)
@@ -138,7 +124,6 @@ class ServiceImpl @Inject constructor(
         } catch (e: Exception) {
             val apiResponse = ServiceResponse(
                 responseType = ResponseType.CONNECTION_ERROR,
-                code = "Connection Error",
                 message = "Something went wrong"
             )
             println("Sage ServiceLayer: ${e.localizedMessage}")
