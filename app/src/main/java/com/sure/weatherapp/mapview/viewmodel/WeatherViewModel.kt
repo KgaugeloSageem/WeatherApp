@@ -26,11 +26,13 @@ class WeatherViewModel @Inject constructor(
 
     private val _currentDayWeatherDetails = MutableStateFlow<WeatherForecastDetails?>(null)
     private val _fiveDayForecasts = MutableStateFlow<List<WeatherForecastDetails>?>(null)
+    private val _searchResults = MutableStateFlow<List<SearchResults>?>(listOf())
     private val _isLoading = MutableStateFlow(false)
 
     val currentDayWeatherDetails: StateFlow<WeatherForecastDetails?> =
         _currentDayWeatherDetails.asStateFlow()
     val fiveDayForecasts: StateFlow<List<WeatherForecastDetails>?> = _fiveDayForecasts.asStateFlow()
+    val searchResults: StateFlow<List<SearchResults>?> = _searchResults.asStateFlow()
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
     fun getWeatherForecast(latitudeAndLongitude: String, isMetricUnit: Boolean) {
@@ -39,28 +41,56 @@ class WeatherViewModel @Inject constructor(
             val getKeyResponse = repository.getLocationKey(latitudeAndLongitude)
 
             if (getKeyResponse.serviceResponse.responseType == ResponseType.SUCCESS) {
-                val response =
-                    repository.getForecast(getKeyResponse.data?.key.toString(), isMetricUnit)
+                val localizedName = getKeyResponse.data?.localizedName
+                val supplementalAdminAreas =
+                    if (getKeyResponse.data?.supplementalAdminAreas?.isEmpty() == true) "" else "${
+                        getKeyResponse.data?.supplementalAdminAreas?.get(0)?.localizedName
+                    },"
+                val administrativeArea = getKeyResponse.data?.administrativeArea?.localizedName
+                val country = getKeyResponse.data?.country?.localizedName
 
-                if (response.serviceResponse.responseType == ResponseType.SUCCESS) {
-                    val localizedName = getKeyResponse.data?.localizedName
-                    val supplementalAdminAreas =
-                        if (getKeyResponse.data?.supplementalAdminAreas?.isEmpty() == true) "" else "${
-                            getKeyResponse.data?.supplementalAdminAreas?.get(0)?.localizedName
-                        },"
-                    val administrativeArea = getKeyResponse.data?.administrativeArea?.localizedName
-                    val country = getKeyResponse.data?.country?.localizedName
+                val location =
+                    "$localizedName, $supplementalAdminAreas $administrativeArea, $country"
 
-                    val location =
-                        "$localizedName, $supplementalAdminAreas $administrativeArea, $country"
-                    _currentDayWeatherDetails.value =
-                        response.data?.toCurrentDayForecastDetails(location)
-
-                    _fiveDayForecasts.value =
-                        response.data?.getFiveDayForecastList(latitudeAndLongitude)
-                }
+                getForeCastWithKey(getKeyResponse.data?.key.toString(), isMetricUnit, location)
             }
             _isLoading.value = false
+        }
+    }
+
+    fun getForeCastWithKey(key: String, isMetricUnit: Boolean, locationName: String) {
+        viewModelScope.launch {
+            val response =
+                repository.getForecast(key, isMetricUnit)
+
+            if (response.serviceResponse.responseType == ResponseType.SUCCESS) {
+
+                _currentDayWeatherDetails.value =
+                    response.data?.toCurrentDayForecastDetails(locationName)
+
+                _fiveDayForecasts.value =
+                    response.data?.getFiveDayForecastList(locationName)
+            }
+        }
+    }
+
+    fun searchLocation(query: String) {
+        viewModelScope.launch {
+            val response = repository.searchLocation(query)
+            if (response.serviceResponse.responseType == ResponseType.SUCCESS) {
+                val searchResult = response.data?.map {
+                    val localizedName = it.localizedName
+                    val supplementalAdminAreas =
+                        if (it.supplementalAdminAreas.isEmpty()) "" else "${it.supplementalAdminAreas[0].localizedName},"
+                    val administrativeArea = it.administrativeArea.localizedName
+                    val country = it.country.localizedName
+
+                    val locationName =
+                        "$localizedName, $supplementalAdminAreas $administrativeArea, $country"
+                    SearchResults(it.key, locationName)
+                }
+                _searchResults.value = searchResult
+            }
         }
     }
 
@@ -80,3 +110,5 @@ class WeatherViewModel @Inject constructor(
         return inputDate?.let { outputFormat.format(it) }
     }
 }
+
+data class SearchResults(val key: String, val locationName: String)

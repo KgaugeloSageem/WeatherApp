@@ -18,7 +18,7 @@ interface WeatherRepository {
         isMetricUnit: Boolean
     ): ServiceResult<WeatherForecastResponse>
 
-    suspend fun searchLocation(query: String): ServiceResult<SearchLocationResponse>
+    suspend fun searchLocation(query: String): ServiceResult<Array<SearchLocationResponse>>
 }
 
 class WeatherRepositoryImpl @Inject constructor(

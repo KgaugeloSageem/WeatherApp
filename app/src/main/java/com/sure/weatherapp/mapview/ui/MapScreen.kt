@@ -1,5 +1,8 @@
-package com.sure.weatherapp.mapview.view
+package com.sure.weatherapp.mapview.ui
 
+import android.annotation.SuppressLint
+import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -7,7 +10,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.CircularProgressIndicator
 import androidx.compose.material.Switch
@@ -15,8 +21,8 @@ import androidx.compose.material3.BottomSheetScaffold
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SearchBar
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.rememberBottomSheetScaffoldState
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
@@ -51,6 +57,7 @@ import kotlinx.coroutines.launch
 private val DEFAULT_LAT_LNG = LatLng(-26.013603, 28.004382)
 
 
+@SuppressLint("CoroutineCreationDuringComposition")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MapScreen(
@@ -59,9 +66,12 @@ fun MapScreen(
 ) {
 
     val currentDayForecast by viewModel.currentDayWeatherDetails.collectAsState()
+    val searchResults by viewModel.searchResults.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
 
     var switchCheckedState by remember { mutableStateOf(true) }
+    var searchQueryInput by remember { mutableStateOf("") }
+
 
     val sheetState = rememberModalBottomSheetState()
 
@@ -110,9 +120,45 @@ fun MapScreen(
     ) {
         Scaffold(
             topBar = {
-                TopAppBar(
-                    title = { Text(text = "Weather App") }
-                )
+                SearchBar(
+                    modifier = Modifier
+                        .fillMaxWidth(),
+                    shape = RoundedCornerShape(26.dp),
+                    query = searchQueryInput,
+                    onQueryChange = {
+                        searchQueryInput = it
+                        viewModel.searchLocation(it)
+                    },
+                    onSearch = {},
+                    active = searchQueryInput.isNotEmpty(),
+                    onActiveChange = {},
+                    placeholder = { Text(text = "Search Location") }
+                ) {
+                    LazyColumn(
+                        Modifier
+                            .padding(bottom = 16.dp)
+                            .fillMaxWidth()
+                    ) {
+                        searchResults?.let { searchResult ->
+                            items(items = searchResult.toList(), itemContent = { results ->
+                                Text(
+                                    modifier = Modifier
+                                        .clickable {
+                                            viewModel.getForeCastWithKey(
+                                                results.key,
+                                                switchCheckedState,
+                                                results.locationName
+                                            )
+                                            searchQueryInput = ""
+                                        }
+                                        .fillMaxWidth()
+                                        .padding(top = 16.dp, start = 16.dp),
+                                    text = results.locationName
+                                )
+                            })
+                        }
+                    }
+                }
             }
         ) {
             Column(
@@ -141,6 +187,26 @@ fun MapScreen(
 
                 }
             }
+        }
+    }
+
+
+
+    BackHandler {
+        if (sheetState.hasExpandedState) {
+            scope.launch {
+                sheetState.hide()
+            }
+        }
+    }
+
+    if (sheetState.hasExpandedState && searchQueryInput.isNotEmpty()) {
+        scope.launch {
+            sheetState.hide()
+        }
+    } else {
+        scope.launch {
+            sheetState.expand()
         }
     }
 

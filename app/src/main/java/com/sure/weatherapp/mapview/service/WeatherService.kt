@@ -13,7 +13,7 @@ interface WeatherService {
 
    suspend fun getForecast(locationKey: String ,isMetricUnit: String): ServiceResult<WeatherForecastResponse>
 
-   suspend fun searchLocation(query: String): ServiceResult<SearchLocationResponse>
+    suspend fun searchLocation(query: String): ServiceResult<Array<SearchLocationResponse>>
 
 }
 
@@ -26,15 +26,30 @@ class WeatherServiceImpl @Inject constructor(
 ): WeatherService {
 
     override suspend fun getLocationKey(latitudeAndLongitude: String): ServiceResult<LocationKeyResponse> {
-       return service.GET(url = GET_LOCATION_KEY_URL, parameters = latitudeAndLongitude, responseType = LocationKeyResponse::class.java)
+        return service.GET(
+            url = GET_LOCATION_KEY_URL,
+            parameters = latitudeAndLongitude,
+            responseType = LocationKeyResponse::class.java,
+            isResponseArray = false
+        )
     }
 
     override suspend fun getForecast(locationKey: String ,isMetricUnit: String): ServiceResult<WeatherForecastResponse> {
-        return service.GET(GET_FORECAST_URL.format(locationKey), isMetricUnit, WeatherForecastResponse::class.java)
+        return service.GET(
+            GET_FORECAST_URL.format(locationKey),
+            isMetricUnit,
+            WeatherForecastResponse::class.java,
+            isResponseArray = false
+        )
     }
 
-    override suspend fun searchLocation(query: String): ServiceResult<SearchLocationResponse> {
-        return service.GET(SEARCH_LOCATION_URL, query, SearchLocationResponse::class.java)
+    override suspend fun searchLocation(query: String): ServiceResult<Array<SearchLocationResponse>> {
+        return service.GET(
+            SEARCH_LOCATION_URL,
+            query,
+            Array<SearchLocationResponse>::class.java,
+            isResponseArray = true
+        )
     }
 
 }

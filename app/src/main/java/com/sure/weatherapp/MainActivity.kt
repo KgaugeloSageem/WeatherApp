@@ -11,8 +11,8 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.sure.weatherapp.mapview.view.FiveDayForecastScreen
-import com.sure.weatherapp.mapview.view.MapScreen
+import com.sure.weatherapp.mapview.ui.FiveDayForecastScreen
+import com.sure.weatherapp.mapview.ui.MapScreen
 import com.sure.weatherapp.mapview.viewmodel.WeatherViewModel
 import com.sure.weatherapp.ui.theme.WeatherAppTheme
 import dagger.hilt.android.AndroidEntryPoint

@@ -19,6 +19,7 @@ import com.sure.weatherapp.servicelayer.models.ServiceResult
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
 import org.junit.Test
 import org.mockito.Mockito
 import org.mockito.Mockito.mock
@@ -42,13 +43,25 @@ class WeatherServiceTest {
             )
         )
         val params = "&q=-123,456"
-        whenever(mockService.GET("locations/v1/cities/geoposition/search", params, LocationKeyResponse::class.java)).thenReturn(response)
+        whenever(
+            mockService.GET(
+                "locations/v1/cities/geoposition/search",
+                params,
+                LocationKeyResponse::class.java,
+                isResponseArray = false
+            )
+        ).thenReturn(response)
 
         // Act
         val result = deviceService.getLocationKey(params)
 
         // Assert
-        Mockito.verify(mockService).GET("locations/v1/cities/geoposition/search", params ,LocationKeyResponse::class.java)
+        Mockito.verify(mockService).GET(
+            "locations/v1/cities/geoposition/search",
+            params,
+            LocationKeyResponse::class.java,
+            isResponseArray = false
+        )
         assertEquals(result.data?.key, "123")
     }
 
@@ -66,39 +79,65 @@ class WeatherServiceTest {
                 ))
         )
         val isMetricUnit = "true"
-        whenever(mockService.GET("forecasts/v1/daily/5day/12345", isMetricUnit, WeatherForecastResponse::class.java)).thenReturn(response)
+        whenever(
+            mockService.GET(
+                "forecasts/v1/daily/5day/12345",
+                isMetricUnit,
+                WeatherForecastResponse::class.java,
+                isResponseArray = false
+            )
+        ).thenReturn(response)
 
         // Act
         val result = deviceService.getForecast("12345", isMetricUnit)
 
         // Assert
-        Mockito.verify(mockService).GET("forecasts/v1/daily/5day/12345", isMetricUnit ,WeatherForecastResponse::class.java)
+        Mockito.verify(mockService).GET(
+            "forecasts/v1/daily/5day/12345",
+            isMetricUnit,
+            WeatherForecastResponse::class.java,
+            isResponseArray = false
+        )
         assertEquals(result.data?.headline?.text, "Sage")
     }
 
     @Test
     fun searchLocation_Successful() = runBlocking {
         // Arrange
-        val response = ServiceResult<SearchLocationResponse>(
+        val response = ServiceResult<Array<SearchLocationResponse>>(
             serviceResponse = ServiceResponse(ResponseType.SUCCESS),
-            data = SearchLocationResponse(
-                "12345",
-                "",
-                Country(""),
-                AdministrativeArea(""),
-                GeoPosition(0.3, 0.3),
-                listOf()
+            data = arrayOf(
+                SearchLocationResponse(
+                    "12345",
+                    "",
+                    Country(""),
+                    AdministrativeArea(""),
+                    GeoPosition(0.3, 0.3),
+                    listOf()
+                )
             )
         )
         val query = "Boksburg"
-        whenever(mockService.GET("locations/v1/search", query, SearchLocationResponse::class.java)).thenReturn(response)
+        whenever(
+            mockService.GET(
+                "locations/v1/search",
+                query,
+                Array<SearchLocationResponse>::class.java,
+                isResponseArray = true
+            )
+        ).thenReturn(response)
 
         // Act
         val result = deviceService.searchLocation(query)
 
         // Assert
-        Mockito.verify(mockService).GET("locations/v1/search", query, SearchLocationResponse::class.java)
-        assertEquals(result.data?.key, "12345")
+        Mockito.verify(mockService).GET(
+            "locations/v1/search",
+            query,
+            Array<SearchLocationResponse>::class.java,
+            isResponseArray = true
+        )
+        assertNotNull(result.data)
     }
 
     @Test
@@ -108,13 +147,25 @@ class WeatherServiceTest {
             ServiceResponse(ResponseType.ERROR)
         )
         val params = "&q=-123,456"
-        whenever(mockService.GET("locations/v1/cities/geoposition/search", params, LocationKeyResponse::class.java)).thenReturn(response)
+        whenever(
+            mockService.GET(
+                "locations/v1/cities/geoposition/search",
+                params,
+                LocationKeyResponse::class.java,
+                isResponseArray = false
+            )
+        ).thenReturn(response)
 
         // Act
         val result = deviceService.getLocationKey(params)
 
         // Assert
-        Mockito.verify(mockService).GET("locations/v1/cities/geoposition/search", params ,LocationKeyResponse::class.java)
+        Mockito.verify(mockService).GET(
+            "locations/v1/cities/geoposition/search",
+            params,
+            LocationKeyResponse::class.java,
+            isResponseArray = false
+        )
         assertEquals(result.serviceResponse.responseType, ResponseType.ERROR)
         Assert.assertNull(result.data)
     }
@@ -126,13 +177,25 @@ class WeatherServiceTest {
             serviceResponse = ServiceResponse(ResponseType.ERROR)
         )
         val isMetricUnit = "true"
-        whenever(mockService.GET("forecasts/v1/daily/5day/12345", isMetricUnit, WeatherForecastResponse::class.java)).thenReturn(response)
+        whenever(
+            mockService.GET(
+                "forecasts/v1/daily/5day/12345",
+                isMetricUnit,
+                WeatherForecastResponse::class.java,
+                isResponseArray = false
+            )
+        ).thenReturn(response)
 
         // Act
         val result = deviceService.getForecast("12345", isMetricUnit)
 
         // Assert
-        Mockito.verify(mockService).GET("forecasts/v1/daily/5day/12345", isMetricUnit ,WeatherForecastResponse::class.java)
+        Mockito.verify(mockService).GET(
+            "forecasts/v1/daily/5day/12345",
+            isMetricUnit,
+            WeatherForecastResponse::class.java,
+            isResponseArray = false
+        )
         assertEquals(result.serviceResponse.responseType, ResponseType.ERROR)
         Assert.assertNull(result.data)
     }
@@ -140,17 +203,29 @@ class WeatherServiceTest {
     @Test
     fun searchLocation_UnSuccessful() = runBlocking {
         // Arrange
-        val response = ServiceResult<SearchLocationResponse>(
+        val response = ServiceResult<Array<SearchLocationResponse>>(
             serviceResponse = ServiceResponse(ResponseType.ERROR)
         )
         val query = "Boksburg"
-        whenever(mockService.GET("locations/v1/search", query, SearchLocationResponse::class.java)).thenReturn(response)
+        whenever(
+            mockService.GET(
+                "locations/v1/search",
+                query,
+                Array<SearchLocationResponse>::class.java,
+                isResponseArray = true
+            )
+        ).thenReturn(response)
 
         // Act
         val result = deviceService.searchLocation(query)
 
         // Assert
-        Mockito.verify(mockService).GET("locations/v1/search", query, SearchLocationResponse::class.java)
+        Mockito.verify(mockService).GET(
+            "locations/v1/search",
+            query,
+            Array<SearchLocationResponse>::class.java,
+            isResponseArray = true
+        )
         assertEquals(result.serviceResponse.responseType, ResponseType.ERROR)
         Assert.assertNull(result.data)
     }

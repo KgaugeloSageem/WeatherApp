@@ -1,13 +1,12 @@
 package com.sure.weatherapp.servicelayer
 
 import com.android.volley.DefaultRetryPolicy
-import com.android.volley.NetworkResponse
-import com.android.volley.ParseError
 import com.android.volley.Request.Method
 import com.android.volley.RequestQueue
 import com.android.volley.Response
 import com.android.volley.VolleyError
 import com.android.volley.toolbox.HttpHeaderParser
+import com.android.volley.toolbox.JsonArrayRequest
 import com.android.volley.toolbox.JsonObjectRequest
 import com.google.gson.Gson
 import com.sure.weatherapp.servicelayer.models.ExceptionResponse
@@ -16,9 +15,8 @@ import com.sure.weatherapp.servicelayer.models.ServiceResponse
 import com.sure.weatherapp.servicelayer.models.ServiceResult
 import kotlinx.coroutines.CancellableContinuation
 import kotlinx.coroutines.suspendCancellableCoroutine
-import org.json.JSONException
+import org.json.JSONArray
 import org.json.JSONObject
-import java.io.UnsupportedEncodingException
 import java.nio.charset.Charset
 import javax.inject.Inject
 import kotlin.coroutines.resume
@@ -27,34 +25,70 @@ class ServiceImpl @Inject constructor(
     private val requestQueue: RequestQueue
 ) : Service {
 
-    override suspend fun <T : Any> GET(url: String, parameters: String, responseType: Class<T>): ServiceResult<T> =
-        request(url = url, method = Method.GET, parameters = parameters, responseType = responseType)
+    override suspend fun <T : Any> GET(
+        url: String,
+        parameters: String,
+        responseType: Class<T>,
+        isResponseArray: Boolean
+    ): ServiceResult<T> =
+        request(
+            url = url,
+            method = Method.GET,
+            parameters = parameters,
+            responseType = responseType,
+            isResponseArray
+        )
 
     private suspend fun <T : Any> request(
         url: String,
         method: Int,
         parameters: String,
-        responseType: Class<T>
+        responseType: Class<T>,
+        isResponseArray: Boolean
     ): ServiceResult<T> = suspendCancellableCoroutine { continuation ->
-        val jsonObjectRequest = createJsonObjectRequest(
-            url = url,
-            method = method,
-            parameters = parameters,
-            continuation = continuation
-        ) { response ->
-            handleResponse(response, responseType, continuation)
+        if (isResponseArray) {
+            val jsonArrayRequest = createJsonArrayRequest(
+                url = url,
+                method = method,
+                parameters = parameters,
+                continuation = continuation
+            ) { response ->
+                handleArrayResponse(response, responseType, continuation)
+            }
+            sendArrayRequest(jsonArrayRequest, continuation)
+        } else {
+            val jsonObjectRequest = createJsonObjectRequest(
+                url = url,
+                method = method,
+                parameters = parameters,
+                continuation = continuation
+            ) { response ->
+                handleObjectResponse(response, responseType, continuation)
+            }
+
+            sendObjectRequest(jsonObjectRequest, continuation)
         }
 
-        sendRequest(jsonObjectRequest, continuation)
     }
 
-    private fun <T : Any> handleResponse(
+    private fun <T : Any> handleObjectResponse(
         response: JSONObject?,
         responseType: Class<T>,
         continuation: CancellableContinuation<ServiceResult<T>>
     ) {
+        println("Sage Service Layer: Handle response Called")
+        val data = parseJsonToDataModel(jsonObject = response, modelClass = responseType)
+        val apiResponse = ServiceResponse(ResponseType.SUCCESS, "Success: 200")
+        val apiResult = ServiceResult(apiResponse, data)
+        continuation.resume(apiResult)
+    }
 
-        val data = parseJsonToDataModel(response, responseType)
+    private fun <T : Any> handleArrayResponse(
+        response: JSONArray?,
+        responseType: Class<T>,
+        continuation: CancellableContinuation<ServiceResult<T>>
+    ) {
+        val data = parseJsonToDataModel(jsonArray = response, modelClass = responseType)
         val apiResponse = ServiceResponse(ResponseType.SUCCESS, "Success: 200")
         val apiResult = ServiceResult(apiResponse, data)
         continuation.resume(apiResult)
@@ -67,6 +101,7 @@ class ServiceImpl @Inject constructor(
         continuation: CancellableContinuation<ServiceResult<T>>,
         onResponse: (JSONObject?) -> Unit
     ): JsonObjectRequest {
+        println("Sage Service Layer Url: \"$BASE_URL/$url?apikey=$API_KEY$parameters\"")
         return object : JsonObjectRequest(
             method, "$BASE_URL/$url?apikey=$API_KEY$parameters", null,
             Response.Listener { response -> onResponse(response) },
@@ -76,27 +111,26 @@ class ServiceImpl @Inject constructor(
                     continuation
                 )
             }) {
+        }
+    }
 
-            override fun parseNetworkResponse(response: NetworkResponse?): Response<JSONObject> {
-                try {
-                    val jsonString = response?.data?.let {
-                        String(
-                            it,
-                            Charset.forName(HttpHeaderParser.parseCharset(response.headers))
-                        )
-                    }
-                    var result: JSONObject? = null
-                    if (!jsonString.isNullOrEmpty()) result = JSONObject(jsonString)
-                    return Response.success(
-                        result,
-                        HttpHeaderParser.parseCacheHeaders(response)
-                    )
-                } catch (e: UnsupportedEncodingException) {
-                    return Response.error(ParseError(e))
-                } catch (je: JSONException) {
-                    return Response.error(ParseError(je))
-                }
-            }
+    private fun <T : Any> createJsonArrayRequest(
+        url: String,
+        method: Int,
+        parameters: String,
+        continuation: CancellableContinuation<ServiceResult<T>>,
+        onResponse: (JSONArray?) -> Unit
+    ): JsonArrayRequest {
+        println("Sage Service Layer Url: \"$BASE_URL/$url?apikey=$API_KEY$parameters\"")
+        return object : JsonArrayRequest(
+            method, "$BASE_URL/$url?apikey=$API_KEY$parameters", null,
+            Response.Listener { response -> onResponse(response) },
+            Response.ErrorListener { error ->
+                handleError(
+                    error,
+                    continuation
+                )
+            }) {
         }
     }
 
@@ -113,8 +147,8 @@ class ServiceImpl @Inject constructor(
 
         try {
             val data = parseJsonToDataModel(
-                JSONObject(byteBody),
-                ExceptionResponse::class.java
+                jsonObject = JSONObject(byteBody),
+                modelClass = ExceptionResponse::class.java
             )
             val response = ServiceResponse(
                 responseType = ResponseType.ERROR,
@@ -133,7 +167,7 @@ class ServiceImpl @Inject constructor(
         }
     }
 
-    private fun <T : Any> sendRequest(
+    private fun <T : Any> sendObjectRequest(
         jsonObjectRequest: JsonObjectRequest,
         continuation: CancellableContinuation<ServiceResult<T>>
     ) {
@@ -147,11 +181,33 @@ class ServiceImpl @Inject constructor(
         }
     }
 
-    private fun <T : Any> parseJsonToDataModel(jsonObject: JSONObject?, modelClass: Class<T>): T? {
+    private fun <T : Any> sendArrayRequest(
+        jsonArrayRequest: JsonArrayRequest,
+        continuation: CancellableContinuation<ServiceResult<T>>
+    ) {
+        jsonArrayRequest.retryPolicy = DefaultRetryPolicy(
+            5000, DefaultRetryPolicy.DEFAULT_MAX_RETRIES, DefaultRetryPolicy.DEFAULT_BACKOFF_MULT
+        )
+        requestQueue.add(jsonArrayRequest)
+
+        continuation.invokeOnCancellation {
+            jsonArrayRequest.cancel()
+        }
+    }
+
+    private fun <T : Any> parseJsonToDataModel(
+        jsonObject: JSONObject? = null,
+        jsonArray: JSONArray? = null,
+        modelClass: Class<T>
+    ): T? {
         return if (modelClass == Void::class.java) {
             null
         } else {
-            Gson().fromJson(jsonObject.toString(), modelClass)
+            if (jsonObject == null) {
+                Gson().fromJson(jsonArray.toString(), modelClass)
+            } else {
+                Gson().fromJson(jsonObject.toString(), modelClass)
+            }
         }
     }
 

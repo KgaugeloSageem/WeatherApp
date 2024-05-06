@@ -1,4 +1,4 @@
-package com.sure.weatherapp.mapview.view
+package com.sure.weatherapp.mapview.ui
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -85,7 +85,7 @@ fun DailyForecastItem(
                             modifier = Modifier.weight(1f),
                             text = "Day: $dayDescription",
                             fontWeight = FontWeight.W700,
-                            fontSize = 16.sp,
+                            fontSize = 10.sp,
                             color = AmberYellow
                         )
 
@@ -93,7 +93,7 @@ fun DailyForecastItem(
                             modifier = Modifier,
                             text = "Night: $nightDescription",
                             fontWeight = FontWeight.W700,
-                            fontSize = 16.sp,
+                            fontSize = 10.sp,
                             color = Color.Blue
                         )
                     }

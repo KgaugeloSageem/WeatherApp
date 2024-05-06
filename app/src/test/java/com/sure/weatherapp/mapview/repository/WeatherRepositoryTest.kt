@@ -76,15 +76,17 @@ class WeatherRepositoryTest {
     @Test
     fun searchLocation_Successful() = runBlocking {
         // Arrange
-        val forecastResponse = ServiceResult<SearchLocationResponse>(
+        val forecastResponse = ServiceResult<Array<SearchLocationResponse>>(
             serviceResponse = ServiceResponse(ResponseType.SUCCESS),
-            data = SearchLocationResponse(
-                "12345",
-                "",
-                Country(""),
-                AdministrativeArea(""),
-                GeoPosition(0.3, 0.3),
-                listOf()
+            data = arrayOf(
+                SearchLocationResponse(
+                    "12345",
+                    "",
+                    Country(""),
+                    AdministrativeArea(""),
+                    GeoPosition(0.3, 0.3),
+                    listOf()
+                )
             )
         )
         whenever(service.searchLocation("&q=Boksburg")).thenReturn(forecastResponse)
@@ -94,7 +96,7 @@ class WeatherRepositoryTest {
 
         // Assert
         Mockito.verify(service).searchLocation("&q=Boksburg")
-        assertEquals(result.data?.key, "12345")
+        assertEquals(result.data?.get(0)?.key, "12345")
     }
 
     @Test
@@ -136,7 +138,7 @@ class WeatherRepositoryTest {
     @Test
     fun searchLocation_UnSuccessful() = runBlocking {
         // Arrange
-        val forecastResponse = ServiceResult<SearchLocationResponse>(
+        val forecastResponse = ServiceResult<Array<SearchLocationResponse>>(
             serviceResponse = ServiceResponse(ResponseType.ERROR)
         )
         whenever(service.searchLocation("&q=Boksburg")).thenReturn(forecastResponse)
