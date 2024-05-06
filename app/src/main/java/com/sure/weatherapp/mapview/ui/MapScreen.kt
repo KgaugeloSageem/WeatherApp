@@ -41,6 +41,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.compose.GoogleMap
@@ -148,6 +149,15 @@ fun MapScreen(
                                                 results.key,
                                                 switchCheckedState,
                                                 results.locationName
+                                            )
+                                            clickedLatLng = results.latLng
+                                            cameraPositionState.move(
+                                                CameraUpdateFactory.newCameraPosition(
+                                                    CameraPosition.fromLatLngZoom(
+                                                        results.latLng,
+                                                        15f
+                                                    )
+                                                )
                                             )
                                             searchQueryInput = ""
                                         }

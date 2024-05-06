@@ -3,6 +3,7 @@ package com.sure.weatherapp.mapview.viewmodel
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.google.android.gms.maps.model.LatLng
 import com.sure.weatherapp.mapview.repository.WeatherRepository
 import com.sure.weatherapp.mapview.service.models.WeatherForecastDetails
 import com.sure.weatherapp.mapview.service.models.WeatherForecastResponse.Companion.getFiveDayForecastList
@@ -87,7 +88,11 @@ class WeatherViewModel @Inject constructor(
 
                     val locationName =
                         "$localizedName, $supplementalAdminAreas $administrativeArea, $country"
-                    SearchResults(it.key, locationName)
+                    SearchResults(
+                        it.key,
+                        locationName,
+                        LatLng(it.geoPosition.latitude, it.geoPosition.longitude)
+                    )
                 }
                 _searchResults.value = searchResult
             }
@@ -111,4 +116,4 @@ class WeatherViewModel @Inject constructor(
     }
 }
 
-data class SearchResults(val key: String, val locationName: String)
+data class SearchResults(val key: String, val locationName: String, val latLng: LatLng)
