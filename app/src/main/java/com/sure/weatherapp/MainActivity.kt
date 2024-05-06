@@ -6,12 +6,18 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import com.sure.weatherapp.mapview.view.FiveDayForecastScreen
+import com.sure.weatherapp.mapview.view.MapScreen
+import com.sure.weatherapp.mapview.viewmodel.WeatherViewModel
 import com.sure.weatherapp.ui.theme.WeatherAppTheme
+import dagger.hilt.android.AndroidEntryPoint
 
+@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -21,25 +27,30 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    Greeting("Android")
+                    val navController = rememberNavController()
+
+                    val viewModel: WeatherViewModel = viewModel()
+
+                    NavHost(navController, startDestination = MAP_SCREEN) {
+
+                        composable(MAP_SCREEN) {
+                            MapScreen(
+                                viewModel = viewModel,
+                                navController = navController
+                            )
+                        }
+
+                        composable(FIVE_DAY_FORECAST_SCREEN) {
+                            FiveDayForecastScreen(viewModel)
+                        }
+                    }
                 }
             }
         }
     }
-}
 
-@Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Text(
-        text = "Hello $name!",
-        modifier = modifier
-    )
-}
-
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    WeatherAppTheme {
-        Greeting("Android")
+    companion object {
+        const val MAP_SCREEN = "map-screen-route"
+        const val FIVE_DAY_FORECAST_SCREEN = "five-day-forecast-screen-route"
     }
 }

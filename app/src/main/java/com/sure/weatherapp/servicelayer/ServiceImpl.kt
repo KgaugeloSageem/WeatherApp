@@ -67,7 +67,8 @@ class ServiceImpl @Inject constructor(
         continuation: CancellableContinuation<ServiceResult<T>>,
         onResponse: (JSONObject?) -> Unit
     ): JsonObjectRequest {
-        return object : JsonObjectRequest(method, "$BASE_URL/$url?apikey=xnWseAuTPupnnl400wT9vlJZ8AHKEL4C$parameters", null,
+        return object : JsonObjectRequest(
+            method, "$BASE_URL/$url?apikey=$API_KEY$parameters", null,
             Response.Listener { response -> onResponse(response) },
             Response.ErrorListener { error ->
                 handleError(
@@ -156,5 +157,6 @@ class ServiceImpl @Inject constructor(
 
     companion object {
         private const val BASE_URL = "http://dataservice.accuweather.com"
+        private const val API_KEY = "2aQIC1AVOZ3EtooOmLSdr1LWydpueKCG"
     }
 }

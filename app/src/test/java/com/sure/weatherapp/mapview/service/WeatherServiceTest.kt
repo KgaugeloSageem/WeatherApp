@@ -7,7 +7,6 @@ import com.sure.weatherapp.mapview.service.models.DailyForecast
 import com.sure.weatherapp.mapview.service.models.GeoPosition
 import com.sure.weatherapp.mapview.service.models.Headline
 import com.sure.weatherapp.mapview.service.models.LocationKeyResponse
-import com.sure.weatherapp.mapview.service.models.ParentCity
 import com.sure.weatherapp.mapview.service.models.SearchLocationResponse
 import com.sure.weatherapp.mapview.service.models.Temperature
 import com.sure.weatherapp.mapview.service.models.TemperatureValue
@@ -18,6 +17,7 @@ import com.sure.weatherapp.servicelayer.models.ResponseType
 import com.sure.weatherapp.servicelayer.models.ServiceResponse
 import com.sure.weatherapp.servicelayer.models.ServiceResult
 import kotlinx.coroutines.runBlocking
+import org.junit.Assert
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import org.mockito.Mockito
@@ -33,7 +33,13 @@ class WeatherServiceTest {
         // Arrange
         val response = ServiceResult<LocationKeyResponse>(
             ServiceResponse(ResponseType.SUCCESS),
-            LocationKeyResponse("123")
+            LocationKeyResponse(
+                "123",
+                "",
+                Country(""),
+                AdministrativeArea(""),
+                supplementalAdminAreas = listOf()
+            )
         )
         val params = "&q=-123,456"
         whenever(mockService.GET("locations/v1/cities/geoposition/search", params, LocationKeyResponse::class.java)).thenReturn(response)
@@ -43,7 +49,7 @@ class WeatherServiceTest {
 
         // Assert
         Mockito.verify(mockService).GET("locations/v1/cities/geoposition/search", params ,LocationKeyResponse::class.java)
-        assertEquals(result.data?.Key, "123")
+        assertEquals(result.data?.key, "123")
     }
 
     @Test
@@ -81,7 +87,6 @@ class WeatherServiceTest {
                 Country(""),
                 AdministrativeArea(""),
                 GeoPosition(0.3, 0.3),
-                ParentCity(""),
                 listOf()
             )
         )
@@ -111,6 +116,7 @@ class WeatherServiceTest {
         // Assert
         Mockito.verify(mockService).GET("locations/v1/cities/geoposition/search", params ,LocationKeyResponse::class.java)
         assertEquals(result.serviceResponse.responseType, ResponseType.ERROR)
+        Assert.assertNull(result.data)
     }
 
     @Test
@@ -128,6 +134,7 @@ class WeatherServiceTest {
         // Assert
         Mockito.verify(mockService).GET("forecasts/v1/daily/5day/12345", isMetricUnit ,WeatherForecastResponse::class.java)
         assertEquals(result.serviceResponse.responseType, ResponseType.ERROR)
+        Assert.assertNull(result.data)
     }
 
     @Test
@@ -145,6 +152,7 @@ class WeatherServiceTest {
         // Assert
         Mockito.verify(mockService).GET("locations/v1/search", query, SearchLocationResponse::class.java)
         assertEquals(result.serviceResponse.responseType, ResponseType.ERROR)
+        Assert.assertNull(result.data)
     }
 
 }
