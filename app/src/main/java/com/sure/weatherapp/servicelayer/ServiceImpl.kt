@@ -213,6 +213,6 @@ class ServiceImpl @Inject constructor(
 
     companion object {
         private const val BASE_URL = "http://dataservice.accuweather.com"
-        private const val API_KEY = "2aQIC1AVOZ3EtooOmLSdr1LWydpueKCG"
+        private const val API_KEY = "H635o3A4axw01yD1hg1CxZQMUilRztZG"
     }
 }
